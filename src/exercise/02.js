@@ -33,19 +33,15 @@ function useAsync(asyncCallback, initialState, dependencies) {
     status: 'idle',
     data: null,
     error: null,
-    ...initialState
+    ...initialState,
   })
 
   React.useEffect(() => {
-    // 💰 this first early-exit bit is a little tricky, so let me give you a hint:
     const promise = asyncCallback()
     if (!promise) {
       return
     }
-    // then you can dispatch and handle the promise etc...
-    if (!pokemonName) {
-      return
-    }
+
     dispatch({type: 'pending'})
     promise.then(
       data => {
@@ -56,26 +52,26 @@ function useAsync(asyncCallback, initialState, dependencies) {
       },
     )
 
-  }, [dependencies])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencies)
+  return state
 }
 // --------------------------- end ---------------------------
 
 function PokemonInfo({pokemonName}) {
-  // 🐨 move all the code between the lines into a new useAsync function.
-  // 💰 look below to see how the useAsync hook is supposed to be called
-  // 💰 If you want some help, here's the function signature (or delete this
-  // comment really quick if you don't want the spoiler)!
-
-
   // 🐨 here's how you'll use the new useAsync hook you're writing:
-  const state = useAsync(() => {
-    if (!pokemonName) {
-      return
-    }
-    return fetchPokemon(pokemonName)
-  }, [], [pokemonName])
+  const state = useAsync(
+    () => {
+      if (!pokemonName) {
+        return
+      }
+      return fetchPokemon(pokemonName)
+    },
+    {status: pokemonName ? 'pending' : 'idle'},
+    [pokemonName],
+  )
   // 🐨 this will change from "pokemon" to "data"
-  const {data, status, error} = state
+  const {data: pokemon, status, error} = state
 
   switch (status) {
     case 'idle':
@@ -85,7 +81,7 @@ function PokemonInfo({pokemonName}) {
     case 'rejected':
       throw error
     case 'resolved':
-      return <PokemonDataView pokemon={data} />
+      return <PokemonDataView pokemon={pokemon} />
     default:
       throw new Error('This should be impossible')
   }
